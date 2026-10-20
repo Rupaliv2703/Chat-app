@@ -1,6 +1,8 @@
 import User from "../models/User.js" ;
 import bcrypt from "bcryptjs" ;
 import { generateToken } from "../lib/utils.js" ;
+
+//Signup a new user
 export const signup = async (req , res)=>{
     const {fullName , email , password , bio} = req.body ;
 
@@ -30,5 +32,30 @@ export const signup = async (req , res)=>{
     } catch (error) {
         console.error(error.message);
         return res.json({message: error.message , success: false}) ;
+    }
+}
+
+//controller to login a user 
+
+export const login = async (req,res)=>{
+    try{
+  const {email , password} = req.body ;
+  if(!email || !password){
+    return res.json({message: "Please provide all required fields" , success: false}) ;
+  }
+
+  const userData = await User.findOne({email}) ;
+  const isPasswordCorrect = await bcrypt.compare(password , userData.password) ;
+
+  if(!isPasswordCorrect){
+    return res.json({message: "Invalid credentials" , success: false}) ;
+  }
+
+  const token = generateToken(userData._id) ;
+     return res.json({message: "Login successful" , success: true , token , userData : userData}) ;
+    }
+    catch(error){
+      console.error(error.message);
+      return res.json({message: error.message , success: false}) ;
     }
 }
