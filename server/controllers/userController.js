@@ -1,5 +1,6 @@
 import User from "../models/User.js" ;
 import bcrypt from "bcryptjs" ;
+import { generateToken } from "../lib/utils.js" ;
 export const signup = async (req , res)=>{
     const {fullName , email , password , bio} = req.body ;
 
@@ -23,10 +24,11 @@ export const signup = async (req , res)=>{
         bio
      }) ;
 
-     
+     const token = generateToken(newUser._id) ;
+     return res.json({message: "Account created successfully" , success: true , token , userData : newUser}) ;
 
     } catch (error) {
-        console.error(error);
-        return res.json({message: "Internal server error" , success: false}) ;
+        console.error(error.message);
+        return res.json({message: error.message , success: false}) ;
     }
 }
