@@ -24,3 +24,25 @@ res.json({success : true , users : filteredUsers , unseenMessages}) ;
         return res.json({message: error.message , success: false}) ;
     }
 }
+
+//get all messages for selected user 
+export const getMessages = async (req , res)=>{
+    try{
+        const { id: selectedUserId } = req.params ;
+        const myId = req.user._id ;
+
+        const messages = await Message.find({
+            $or : [
+               {senderId : myId , receiverId : selectedUserId},
+               {senderId : selectedUserId , receiverId : myId}
+            ]
+        })
+        await Message.updateMany({senderId : selectedUserId , receiverId : myId } , {seen : true}) ;
+        res.json({success : true , messages}) ;
+    }
+
+    catch(error){
+        console.error(error.message);
+        return res.json({message: error.message , success: false}) ;
+    }
+}
