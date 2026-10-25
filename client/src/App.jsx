@@ -5,6 +5,7 @@ import About from './pages/About'
 import Profile from './pages/Profile'
 import Login from './pages/Login'
 import chatbg from './assets/chatbg.png'
+import {Toaster} from 'react-hot-toast'
 
 const App = () => {
   return (
@@ -12,6 +13,7 @@ const App = () => {
       className=" bg-cover "
       style={{ backgroundImage: `url(${chatbg})` }}
     >
+      <Toaster/>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
