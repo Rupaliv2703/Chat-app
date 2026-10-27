@@ -55,12 +55,24 @@ toast.error(data.message)
     
 }
 
+//logout function to handle user logout and socket disconnection
+
+const logout = async ()=>{
+    localStorage.removeItem('token');
+    settoken(null);
+    setauthUser(null);
+    setonlineUsers([]);
+    axios.defaults.headers.common['token']=null ;
+    toast.success("Logged out successfully");
+    socket.disconnect();
+}
+
  //connect socket function to handle socket connection and online users updates 
- const connectSocket = (userData){
+ const connectSocket = (userData)=>{
     if(!userData || socket?.connected) return ;
     const newSocket = io(backendUrl , {
         query:{
-            userId : userData._id ;
+            userId : userData._id ,
         }
     });
     newSocket.connect();
