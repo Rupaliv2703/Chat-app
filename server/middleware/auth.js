@@ -1,22 +1,60 @@
 import jwt from "jsonwebtoken" ;
-import User from "../models/userModel.js" ;
+import User from "../models/User.js" ;
 
 //Middleware to protect routes 
-export const protectRoute = async (req , res , next)=>{
-    try{
+// export const protectRoute = async (req , res , next)=>{
+//     try{
        
-        const token = req.headers.token ;
-        const decoded = jwt.verify(token , process.env.JWT_SECRET) ;
-        const user = await User.findById(decoded.id).select("-password") ;
-        if(!user){
-            return res.json({message: "User not found" , success: false}) ;
-        }
+//         const token = req.headers.token ;
+//         const decoded = jwt.verify(token , process.env.JWT_SECRET) ;
+//         const user = await User.findById(decoded.id).select("-password") ;
+//         if(!user){
+//             return res.json({message: "User not found" , success: false}) ;
+//         }
 
-        req.user = user ;
-        next() ;
+//         req.user = user ;
+//         next() ;
+//     }
+//     catch(error){
+//         console.log(error.message);
+//         return res.json({message: error.message , success: false}) ;
+//     }
+// }
+
+//check
+
+
+export const protectRoute = async (req, res, next) => {
+  try {
+    const token = req.headers.token;
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "No token provided"
+      });
     }
-    catch(error){
-        console.log(error.message);
-        return res.json({message: error.message , success: false}) ;
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await User.findById(decoded.userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
     }
-}
+
+    req.user = user;
+    next();
+
+  } catch (error) {
+    console.log("Auth middleware error:", error.message);
+
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired token"
+    });
+  }
+};

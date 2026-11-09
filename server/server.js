@@ -41,6 +41,12 @@ io.on ("connection" , (socket)=>{
 app.use(express.json({limit :'4mb'}));
 app.use(cors());
 
+//check
+app.use((req, res, next) => {
+  console.log("INCOMING REQUEST:", req.method, req.url);
+  next();
+});
+
 //Routes setup
 app.use("/api/status" ,(req,res)=>res.send('server is live'));
 app.use("/api/auth" , userRouter);
@@ -50,4 +56,17 @@ app.use("/api/messages" , messageRouter);
 await connectDB();
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT ,()=>console.log(`Server is running on port ${PORT}`));
+// server.listen(PORT ,()=>console.log(`Server is running on port ${PORT}`));
+
+server.on("error", (error) => {
+  console.log("SERVER ERROR:", error);
+});
+
+server.listen(PORT, "127.0.0.1", () => {
+  console.log("SERVER ADDRESS:", server.address());
+  console.log("SERVER LISTENING:", server.listening);
+
+  app.get("/test", (req, res) => {
+    res.send("Hello from backend");
+  });
+});

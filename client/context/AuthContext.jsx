@@ -1,12 +1,14 @@
-import { createContext, useEffect } from "react";
-import axios from 'axios '
-import { useState } from "react";
+import { createContext } from "react";
+import axios from "axios";
+import { useState , useEffect } from "react";
 import toast from "react-hot-toast";
-import { useEffect } from "react";
 import {io} from 'socket.io-client'
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
-axios.defaults.baseURL = backendUrl ;
+// const backendUrl = import.meta.env.VITE_BACKEND_URL?.trim() || "http://localhost:5000";
+// axios.defaults.baseURL = backendUrl ;
+const backendUrl = import.meta.env.VITE_BACKEND_URL?.trim() || "http://127.0.0.1:5000";
+
+axios.defaults.baseURL = backendUrl;
 
 export const AuthContext = createContext();
 
@@ -16,19 +18,35 @@ const [token, settoken] = useState(localStorage.getItem("token"));
 const [authUser, setauthUser] = useState(null) ;
 const [onlineUsers, setonlineUsers] = useState([]);
 const [socket, setsocket] = useState(null);
+const [loading, setLoading] = useState(true);
 
 //Check if user is authenticated and is so , set the user data and connect the socket 
 const checkAuth = async ()=>{
     try{
-  const {data} = await axios.get("/api/auth/check");
+const {data} = await axios.get("/api/auth/check" ,{
+    headers: {
+        token: localStorage.getItem("token")
+      }
+});
   if(data.success){
     setauthUser(data.user)
     connectSocket(data.user)
   }
+  else {
+    //   setauthUser(null);
+    //   localStorage.removeItem("token");
+      console.log("AUTH FAILED:", data.message);
+    }
     }
     catch(error){
-toast.error(error.message) ;
+// toast.error(error.message) ;
+//check
+console.log("CHECK AUTH ERROR:", error.response?.data || error.message);
+    setauthUser(null);
     }
+    finally {
+    setLoading(false);
+  }
 }
 
 
@@ -36,6 +54,7 @@ toast.error(error.message) ;
 const login = async (state , Credentials)=>{
     try{
         const {data} = await axios.post (`/api/auth/${state}` , Credentials);
+        console.log("Signup/Login response:", data);
         if(data.success){
             setauthUser(data.userData);
             connectSocket(data.userData);
@@ -50,7 +69,7 @@ const login = async (state , Credentials)=>{
     }
 
     catch(error){
-toast.error(data.message)
+toast.error(error.response?.data?.message || error.message)
     }
     
 }
@@ -110,8 +129,11 @@ useEffect (()=>{
   axios,
 authUser ,
 onlineUsers ,
-socket
-
+socket ,
+login ,
+logout ,
+updateProfile ,
+ loading
 
     }
 
@@ -122,6 +144,5 @@ socket
         </AuthContext.Provider>
     )
 }
-
 
 
