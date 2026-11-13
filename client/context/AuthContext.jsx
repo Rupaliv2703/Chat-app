@@ -92,11 +92,15 @@ const updateProfile = async (body)=>{
     const {data} = await axios.put("/api/auth/update-profile" , body);
     if(data.success){
         setauthUser(data.user);
-        toast.success("Profile updates successfully")
+        toast.success("Profile updated successfully");
+        return true;
     }
+    toast.error(data.message || "Unable to update profile");
+    return false;
 }
     catch(error){
-   toast.error(error.message)
+   toast.error(error.response?.data?.message || error.message);
+   return false;
     }
 }
 
@@ -144,5 +148,4 @@ updateProfile ,
         </AuthContext.Provider>
     )
 }
-
 

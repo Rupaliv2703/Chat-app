@@ -1,7 +1,7 @@
 import User from "../models/User.js" ;
 import bcrypt from "bcryptjs" ;
 import { generateToken } from "../lib/utils.js" ;
-
+import cloudinary from "../lib/cloudinary.js" ;
 //Signup a new user
 export const signup = async (req , res)=>{
     const {fullName , email , password , bio} = req.body ;
@@ -80,18 +80,51 @@ export const updateProfile = async(req , res)=>{
     try{
       const {profilePic , fullName , bio} = req.body ;
       const userId = req.user._id ;
-    let updatedUser ;
-if(!profilePic){
-    updatedUser = await User.findByIdAndUpdate(userId , {bio , fullName} , {new : true}) ;
-}
-else{
-    const upload = await cloudinary.uploader.upload(profilePic);
-    updatedUser = await User.findByIdAndUpdate(userId , {profilePic: upload.secure_url , fullName , bio} , {new : true}) ;
-}
-res.json({success: true , user : updatedUser}) ;
-}
-    catch(error){
-        console.error(error.message);
-        return res.json({message: error.message , success: false}) ;
+      const updates = { fullName, bio };
+
+      if (profilePic) {
+        const upload = await cloudinary.uploader.upload(profilePic, {
+          folder: "chat-app/profile-pictures",
+          resource_type: "image" 
+           
+        });
+        updates.profilePic = upload.secure_url;
+      }
+
+      const updatedUser = await User.findByIdAndUpdate(userId, updates, {
+        new: true,
+        runValidators: true
+      }).select("-password");
+
+      if (!updatedUser) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+
+      return res.json({ success: true, user: updatedUser });
+    } catch (error) {
+      const providerError = error?.error ?? error;
+      const providerStatus = Number.isInteger(providerError?.http_code)
+        ? providerError.http_code
+        : null;
+      const providerMessage = typeof providerError?.message === "string"
+        ? providerError.message
+        : "Unknown profile update error";
+      const status = providerStatus && providerStatus >= 400 && providerStatus < 600
+        ? providerStatus
+        : 500;
+
+      console.error("Profile update failed:", {
+        message: providerMessage,
+        httpCode: providerStatus,
+        name: providerError?.name,
+        requestId: providerError?.request_id
+      });
+
+      return res.status(status).json({
+        success: false,
+        message: providerStatus
+          ? `Cloudinary upload failed (${providerStatus}): ${providerMessage}`
+          : "Unable to update profile. Please try again."
+      });
     }
-}
+};

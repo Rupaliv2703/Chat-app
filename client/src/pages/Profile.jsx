@@ -1,29 +1,38 @@
 import React from 'react'
 import { useState , useContext } from 'react'
 import {useNavigate} from 'react-router-dom'
+import toast from 'react-hot-toast'
 import assets from '../assets/assets'
 import { AuthContext } from '../../context/AuthContext'
 const Profile = () => {
 const {authUser , updateProfile} = useContext(AuthContext)
+  const [isSaving, setIsSaving] = useState(false)
 
   const navigate = useNavigate()
 
   const handleSubmit = async (e) =>{
     e.preventDefault() ;
-    if(!selectedImg){
-      await updateProfile({fullName :name , bio})
-    navigate('/');
-    return ;
-    }
+    setIsSaving(true)
+    try {
+      let profilePic;
+      if (selectedImg) {
+        profilePic = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error("Unable to read the selected image"));
+          reader.readAsDataURL(selectedImg);
+        });
+      }
 
-    const reader = new FileReader();
-    reader.readAsDataURL(selectedImg);
-    reader.onload = async ()=>{
-      const base64Image = reader.result ;
-      await updateProfile({profilePic :base64Image ,fullName: name , bio})
-    navigate('/');
+      const updated = await updateProfile({ profilePic, fullName: name, bio });
+      if (updated) {
+        navigate('/');
+      }
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsSaving(false)
     }
-   
   }
 
   const [selectedImg, setselectedImg] = useState(null)
@@ -43,9 +52,9 @@ const {authUser , updateProfile} = useContext(AuthContext)
         <label htmlFor='avatar' className='flex items-center gap-3 cursor-pointer'>
 
           <input onChange={(e)=>setselectedImg(e.target.files[0])}
-           type='file' id='avatar' accept=' .png , .jpg , .jpeg' hidden />
-          <img src={selectedImg ? URL.createObjectURL(selectedImg) : assets.avatar_icon} alt=''
-          className={`w-12 h-12 ${selectedImg && 'rounded-full'}`} />
+           type='file' id='avatar' accept='image/png,image/jpeg,image/webp' hidden />
+          <img src={selectedImg ? URL.createObjectURL(selectedImg) : authUser?.profilePic || assets.avatar_icon } alt=''
+          className={`w-12 h-12  rounded-full object-cover ${selectedImg && 'rounded-full'}`} />
         Upload Profile Image
         </label>
 
@@ -54,13 +63,13 @@ const {authUser , updateProfile} = useContext(AuthContext)
         <textarea onChange={(e)=>setbio(e.target.value)} value={bio} rows={4} required placeholder='provide a profile bio ' className='p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-600'
         ></textarea>
         
-        <button type='submit' className='bg-gradient-to-r from-purple-400 to-violet-600 text-white p-2 rounded-full text-lg cursor-pointer'>
-          Save Changes
+        <button type='submit' disabled={isSaving} className='bg-gradient-to-r from-purple-400 to-violet-600 text-white p-2 rounded-full text-lg cursor-pointer disabled:opacity-60'>
+          {isSaving ? 'Saving...' : 'Save Changes'}
         </button>
       
  </form>
-      <img className={`max-w-44 aspect-square rounded-full mx-10 max-sm:mt-10  ${selectedImg && 'rounded-full'}`}
-      src={assets.logo_icon} alt='' />
+      <img className={`max-w-44 aspect-square rounded-full object-cover mx-10 max-sm:mt-10  ${selectedImg && 'rounded-full'}`}
+      src={ authUser?.profilePic|| assets.logo_icon} alt='' />
 
      </div>
     </div>

@@ -8,5 +8,4 @@ userRouter.post("/signup" , signup);
 userRouter.post("/login" , login);
 userRouter.get("/check" ,protectRoute ,  checkAuth);
 userRouter.put("/update-profile" ,protectRoute , updateProfile);
-
-export default userRouter
+export default userRouter;
